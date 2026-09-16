@@ -5,8 +5,29 @@ const jsonHandler = require('./jsonResponses.js');
 
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
-const handlePost = (request, response, parsedUrl) => {
 
+const parseBody = (req, res, handler) => {
+  body = [];
+
+  req.on('error', (err) => {
+    console.dir(err); // eslint-disable-line no-console
+    res.statusCode = 400
+    res.end();
+  });
+
+  req.on('data', (chunk) => {
+    body.push(chunk);
+  });
+
+  req.on('end', () => {
+    const bodyStr = Buffer.concat(body).toString();
+  });
+}
+
+const handlePost = (request, response, parsedUrl) => {
+  if (parsedUrl.pathname === '/addUser') {
+    parseBody(request, response, jsonHandler.addUser);
+  }
 };
 
 const handleGet = (request, response, parsedUrl) => {
@@ -23,9 +44,14 @@ const onRequest = (request, response) => {
   const protocol = request.connection.encrypted ? 'https' : 'http';
   const parsedUrl = new URL(request.url, `${protocol}://${request.headers.host}`);
 
-
+  if (request.method === 'POST') {
+    handlePost(request, response, parsedUrl);
+  }
+  else {
+    handleGet(request, response, parsedUrl);
+  }
 };
 
 http.createServer(onRequest).listen(port, () => {
-  console.log(`Listening on 127.0.0.1: ${port}`);
+  console.log(`Listening on 127.0.0.1: ${port}`); // eslint-disable-line no-console
 });
