@@ -7,7 +7,7 @@ const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
 
 const parseBody = (req, res, handler) => {
-  body = [];
+  let body = [];
 
   req.on('error', (err) => {
     console.dir(err); // eslint-disable-line no-console
@@ -21,6 +21,8 @@ const parseBody = (req, res, handler) => {
 
   req.on('end', () => {
     const bodyStr = Buffer.concat(body).toString();
+    req.body = query.parse(bodyStr);
+    handler(req, res);
   });
 }
 
