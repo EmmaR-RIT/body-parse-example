@@ -21,7 +21,18 @@ const parseBody = (req, res, handler) => {
 
   req.on('end', () => {
     const bodyStr = Buffer.concat(body).toString();
-    req.body = query.parse(bodyStr);
+    switch (req.headers['content-type']) {
+      case 'application/x-www-form-urlencoded':
+        req.body = query.parse(bodyStr);
+        break;
+      case 'application/json':
+        req.body = JSON.parse(bodyStr);
+        break;
+      default:
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.write(JSON.stringify({ message: "Invalid data type recieved" }));
+        res.end();
+    }
     handler(req, res);
   });
 }

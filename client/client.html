@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>Our simple HTTP server</title>
   <link rel="stylesheet" type="text/css" href="/style.css">
-  
+
   <script>
-    const handleResponse = (response) => {
+    const handleResponse = async (response) => {
       const content = document.querySelector('#content');
-      
-      switch(response.status) {
+      switch (response.status) {
         case 200:
           content.innerHTML = `<b>Success</b>`;
           break;
@@ -21,33 +21,54 @@
         case 400:
           content.innerHTML = `<b>Bad Request</b>`;
           break;
-        default: 
+        default:
           content.innerHTML = `Error code not implemented by client.`;
           break;
       }
-      
+
+      const json = await response.json();
+      if (json.message) {
+        content.innerHTML += `<p>${json.message}</p>`;
+      }
     };
 
     const sendPost = (nameForm) => {
+      const type = nameForm.querySelector("#mimeType").value;
+      const name = nameForm.querySelector("#nameField").value;
+      const age = nameForm.querySelector("#ageField").value;
 
+      let bodyData;
+      if (type === 'application/x-www-form-urlencoded') {
+        bodyData = `name=${name}&age=${age}`
+      }
+      else if (type === 'application/json') {
+        bodyData = JSON.stringify({ name, age })
+      }
+
+      fetch(nameForm.getAttribute("action"), {
+        method: nameForm.getAttribute("method"),
+        headers: {
+          'Content-Type': type,
+          'Accept': 'application/json'
+        },
+        body: bodyData
+      }).then(r => handleResponse(r));
     };
 
     const init = () => {
       const nameForm = document.querySelector('#nameForm');
-      
-      const addUser = (e) => {
+      nameForm.onsubmit = (e) => {
         e.preventDefault();
         sendPost(nameForm);
         return false;
-      }
-      
-      //nameForm.addEventListener('submit', addUser);
+      };
     };
 
     window.onload = init;
 
   </script>
 </head>
+
 <body>
   <section id="top">
     <h3>POST Status Code Tests</h3>
@@ -55,7 +76,11 @@
       <label for="name">Name: </label>
       <input id="nameField" type="text" name="name" />
       <label for="age">Age: </label>
-      <input id="ageField" type="number" name="age" min="0" max="100" step="1"/>
+      <input id="ageField" type="number" name="age" min="0" max="100" step="1" />
+      <select id="mimeType" name="mimeType">
+        <option value="application/x-www-form-urlencoded">Url Encoded</option>
+        <option value="application/json">JSON</option>
+      </select>
       <input type="submit" value="Add User" />
     </form>
     <p>Go to <a href="/getUsers">/getUsers</a> to see users.</p>
@@ -63,4 +88,5 @@
   <section id="content">
   </section>
 </body>
+
 </html>
